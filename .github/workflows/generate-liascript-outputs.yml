@@ -1,0 +1,89 @@
+name: Generate LiaScript Outputs
+
+# Trigger: Run the workflow when changes are pushed to the 'main' branch.
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository's code to project directory.
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          path: project
+
+      # Step 2: Set up Node.js environment.
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22' # Specify the Node.js version.
+
+      # Step 3: Install the LiaScript exporter globally using npm.
+      - name: Install LiaScript Exporter
+        run: |
+          npm install -g @liascript/exporter
+
+      # Step 4: Generate a PDF from README.md.
+      - name: Generate PDF
+        run: |
+          liaex -i project/README.md --format pdf --output Documentation --pdf-timeout 50000
+
+      # Step 5: Generate a SCORM package.
+      - name: Generate SCORM
+        run: |
+          liaex -i project/README.md --format scorm2004 --output SCORM
+
+      # Step 6: Generate an IMS package.
+      - name: Generate IMS Package
+        run: |
+          liaex -i project/README.md --format ims --output IMS
+
+      # Step 7: Create a new GitHub release for the generated assets.
+      - name: Create New Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: 'latest'
+          release_name: 'Latest LiaScript Documentation'
+          draft: false
+          prerelease: false
+
+      # Step 8: Upload the generated PDF as a release asset.
+      - name: Upload PDF as Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: Documentation.pdf
+          asset_name: Documentation.pdf
+          asset_content_type: application/pdf
+
+      # Step 9: Upload the generated SCORM package.
+      - name: Upload SCORM as Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: SCORM.zip
+          asset_name: SCORM.zip
+          asset_content_type: application/zip
+
+      # Step 10: Upload the generated IMS package.
+      - name: Upload IMS as Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: IMS.zip
+          asset_name: IMS.zip
+          asset_content_type: application/zip
