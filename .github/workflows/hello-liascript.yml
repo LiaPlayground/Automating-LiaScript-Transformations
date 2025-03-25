@@ -1,0 +1,15 @@
+# File: .github/workflows/hello-liascript.yml
+name: Hello LiaScript
+
+# Trigger: Run this workflow on every push.
+on: push
+
+jobs:
+  hello:
+    # Run on the latest Ubuntu runner.
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Print a greeting to the console.
+      - name: Print Greeting
+        run: echo "Hello LiaScript"
